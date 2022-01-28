@@ -1,7 +1,10 @@
-from email.mime import image
+# from email.mime import image
 from openpyxl import load_workbook
 from chinese_calendar import holidays, is_workday, is_holiday, is_in_lieu
 import calendar
+import os
+import pandas as pd
+from employee import Employee
 
 
 def get_monthrange(year,month):
@@ -92,30 +95,64 @@ def update_basic_info(ws, year, month, info):
     ws['b8'] = info['six_workdays']
     ws['b9'] = info['six_holidays']
 
+def get_filename(name_prefix):
+    _files = os.listdir('.//考勤统计表')
+    filename = './/考勤统计表//'
+    for each in _files:
+        if each.startswith(name_prefix):
+            filename += each
+    return filename
 
+    
+def get_employees():
+    filename = get_filename('广丰惠州_月度汇总')
+    wb = load_workbook(filename,data_only=True)
+    ws = wb['月度汇总']
+    iter_employees = ws.iter_cols(max_col=1,min_row=5,max_row=ws.max_row,values_only=True)
+    employees_list = {}
+    for each in iter_employees:
+        for i in each:
+            if i != '陈江':
+                employees_list[i] = Employee(i)
+            if i == '刘光华' or i == '林锦萍' or i == '张辉':
+                employees_list[i].six_day_moda=True
+    return employees_list
 
+def update_hengke_info(ws, year, month, employees_list):
+    ws['a2'] = '惠州恒科房地产开发有限公司%s年%s月份员工考勤确认统计表' % (year,month)
+    ws['p3'] = '制表日期:%s-%s-1' % (year,month)
 
+def update_employees_kaoqing_info(em, workday_info):
+    if em.six_day_mode == True:
+        em.yingchu_days = workday_info['six_workdays']
+    else:
+        em.yingchu_days = workday_info['workday_count']
+    
+    filename = get_filename('广丰惠州_每日统计')
+    wb = load_workbook(filename)
+    ws = wb.active
+    
 
 
 
 def main():
     year = 2022
     month = 1
-
     workday_info = get_workday_info(year,month)
+    employees_list = get_employees()
+    update_employees_kaoqing_info(employees_list['吴英恒'], workday_info)
 
-    wb = load_workbook('考勤确认表.xlsx',data_only=True)
+    wb = load_workbook('.//考勤统计表//考勤确认表.xlsx',data_only=True)
 
     # 更新基础信息表
-    ws = wb['基础信息表']
-    update_basic_info(ws,year,month,workday_info)
+    update_basic_info(wb['基础信息表'], year, month, workday_info)
 
-    ws_hengke = wb['恒科']
-    ws_hengke['a2'] = '惠州恒科房地产开发有限公司' + str(year) + '年' + str(month) + '月份员工考勤确认统计表'
-    ws_hengke['p3'] = '制表日期：' + str(2021) + '-' + str(month) + '-1'
+    # 更新恒科表单
+    update_hengke_info(wb['恒科'], year, month, employees_list)
+
 
     # 保存
-    wb.save(str(month)+'月考勤确认表.xlsx')
+    wb.save('.//考勤统计表//%s月考勤确认表.xlsx' % month)
 
 if __name__ == '__main__':
     main()
