@@ -112,20 +112,21 @@ def get_employees():
     for each in iter_employees:
         for i in each:
             if i != '陈江':
-                employees_list[i] = Employee(i)
-            if i == '刘光华' or i == '林锦萍' or i == '张辉':
-                employees_list[i].set_six_workdays_mode()
+                if i == '刘光华' or i == '林锦萍' or i == '张辉':
+                    employees_list[i] = Employee(i,six_workday_mode=True)
+                else:
+                    employees_list[i] = Employee(i)
     return employees_list
 
 def get_kaoqing_details(filename):
     wb = load_workbook(filename)
     ws = wb.active
     title = []
-    for row in ws.iter_rows(min_row=3, max_row=3, min_col=1, max_col=37,values_only=True):
+    for row in ws.iter_rows(min_row=3, max_row=3, min_col=1, max_col=39,values_only=True):
         for cell in row:
             title.append(cell)
     ws.delete_rows(1,4)
-    ws.delete_cols(38,ws.max_column-37)
+    ws.delete_cols(40,ws.max_column-39)
     return pd.DataFrame(ws.values, columns=title)
 
 def update_employees_kaoqing_info(em, workday_info, dataframe):
@@ -141,15 +142,94 @@ def update_employees_kaoqing_info(em, workday_info, dataframe):
             elif row[37] is not None:
                 if int(row[37]) >= 7:
                     em.add_actual_workdays()
-    pass
+            if row[39] is not None:
+                em.add_holidays(float(row[39]))
+    if em.get_holidays() != 0:
+        em.set_quanqing(False)
 
 def update_hengke_info(ws, year, month, employees_list):
     ws['a2'] = '惠州恒科房地产开发有限公司%s年%s月份员工考勤确认统计表' % (year,month)
     ws['p3'] = '制表日期:%s-%s-1' % (year,month)
+    _i = 6
+    for each in ws.iter_cols(min_col=4, max_col=4, min_row=6, max_row=ws.max_column,values_only=True):
+        for cell in each:
+            if cell is None:
+                break
+            else:
+                yingchu_days = employees_list[cell].get_yingchu_days()
+                actual_days = employees_list[cell].get_actual_workdays()
+                quanqing = employees_list[cell].get_quanqing()
+                ws.cell(row=_i,column=5,value=str(yingchu_days)+'D')
+                ws.cell(row=_i,column=6,value=str(actual_days)+'D')
+                if quanqing:
+                    ws.cell(row=_i,column=15,value='是')
+                else:
+                    ws.cell(row=_i,column=15,value='否')
+                _i += 1
+
+def update_hengdi_info(ws, year, month, employees_list):
+    ws['a3'] = '惠州恒科地地产开发有限公司%s年%s月份员工考勤确认统计表' % (year,month)
+    ws['p4'] = '制表日期:%s-%s-1' % (year,month)
+    _i = 7
+    for each in ws.iter_cols(min_col=4, max_col=4, min_row=7, max_row=ws.max_column,values_only=True):
+        for cell in each:
+            if cell is None:
+                break
+            else:
+                yingchu_days = employees_list[cell].get_yingchu_days()
+                actual_days = employees_list[cell].get_actual_workdays()
+                quanqing = employees_list[cell].get_quanqing()
+                ws.cell(row=_i,column=5,value=str(yingchu_days)+'D')
+                ws.cell(row=_i,column=6,value=str(actual_days)+'D')
+                if quanqing:
+                    ws.cell(row=_i,column=15,value='是')
+                else:
+                    ws.cell(row=_i,column=15,value='否')
+                _i += 1
+
+def update_guagnyue_info(ws, year, month, employees_list):
+    ws['a3'] = '广悦实业有限公司%s年%s月份员工考勤确认统计表' % (year,month)
+    ws['p4'] = '制表日期:%s-%s-1' % (year,month)
+    _i = 7
+    for each in ws.iter_cols(min_col=4, max_col=4, min_row=7, max_row=ws.max_column,values_only=True):
+        for cell in each:
+            if cell is None:
+                break
+            else:
+                yingchu_days = employees_list[cell].get_yingchu_days()
+                actual_days = employees_list[cell].get_actual_workdays()
+                quanqing = employees_list[cell].get_quanqing()
+                ws.cell(row=_i,column=5,value=str(yingchu_days)+'D')
+                ws.cell(row=_i,column=6,value=str(actual_days)+'D')
+                if quanqing:
+                    ws.cell(row=_i,column=15,value='是')
+                else:
+                    ws.cell(row=_i,column=15,value='否')
+                _i += 1
+
+def update_wanguo_info(ws, year, month, employees_list):
+    ws['a3'] = '万国实业有限公司%s年%s月份员工考勤确认统计表' % (year,month)
+    ws['p4'] = '制表日期:%s-%s-1' % (year,month)
+    _i = 7
+    for each in ws.iter_cols(min_col=4, max_col=4, min_row=7, max_row=ws.max_column,values_only=True):
+        for cell in each:
+            if cell is None:
+                break
+            else:
+                yingchu_days = employees_list[cell].get_yingchu_days()
+                actual_days = employees_list[cell].get_actual_workdays()
+                quanqing = employees_list[cell].get_quanqing()
+                ws.cell(row=_i,column=5,value=str(yingchu_days)+'D')
+                ws.cell(row=_i,column=6,value=str(actual_days)+'D')
+                if quanqing:
+                    ws.cell(row=_i,column=15,value='是')
+                else:
+                    ws.cell(row=_i,column=15,value='否')
+                _i += 1
 
 def main():
-    year = 2021
-    month = 12
+    year = 2022
+    month = 1
     wb = load_workbook('.//考勤统计表//考勤确认表.xlsx',data_only=True)
 
     # 更新基础信息表
@@ -164,6 +244,9 @@ def main():
 
     # 更新恒科表单
     update_hengke_info(wb['恒科'], year, month, employees_list)
+    update_hengdi_info(wb['恒地'],year,month, employees_list)
+    update_hengdi_info(wb['广悦'],year,month, employees_list)
+    update_hengdi_info(wb['万国'],year,month, employees_list)
 
 
     # 保存
